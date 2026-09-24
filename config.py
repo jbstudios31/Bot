@@ -27,7 +27,9 @@ MAX_IA_WORDS = 30
 # matchea por prefijo normalizado.
 REGISTRO_PREFIJO = "registration form"
 
-FIREBASE_URL = "https://data-base-92efd-default-rtdb.firebaseio.com"
+# Proyecto Firebase de la app "GT3 Platinum Cup" (temporada 2). Antes apuntaba
+# a data-base-92efd (GT3 Cup World Series, app vieja de 2 categorías).
+FIREBASE_URL = "https://pilotos-e91a5-default-rtdb.firebaseio.com"
 # Web API key del proyecto Firebase: no es secreta (la seguridad la dan las
 # Firebase Rules + Auth), pero se lee de env var para no dejarla en el repo
 # y poder rotarla sin tocar código.

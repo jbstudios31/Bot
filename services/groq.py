@@ -1,11 +1,11 @@
 """Cliente Groq (IA) usado para las respuestas de personalidad del bot."""
-import json
 import re
 import unicodedata
 import aiohttp
 
 import config
 from services.firebase import get_firebase, _get_session
+from utils.standings import build_ai_context, get_league_id
 
 _GROQ_TIMEOUT = aiohttp.ClientTimeout(total=15)
 
@@ -88,11 +88,14 @@ permanentes. No le hagas chistes pasivo-agresivos ni lo insultes: él te creó y
 se lo reconocés. Si te pide algo, hacelo con la mejor disposición y agradecele
 cuando corresponda.
 
-Cuando te pregunten sobre estadísticas, carreras, pilotos o equipos, usa los datos
-reales de Firebase. Respondé SIEMPRE en el mismo idioma que el usuario. Sé MUY
-breve: máximo 1-2 oraciones cortas. Sin rodeos.
+Cuando te pregunten sobre estadísticas, carreras, pilotos o equipos, usa
+ÚNICAMENTE los datos de la sección de abajo. Nunca inventes nombres, puntos
+ni resultados que no estén ahí, y nunca menciones IDs, claves técnicas ni
+nada que suene a base de datos: si algo no está en los datos, decí que no
+tenés ese dato todavía. Respondé SIEMPRE en el mismo idioma que el usuario.
+Sé MUY breve: máximo 1-2 oraciones cortas. Sin rodeos.
 
-DATOS ACTUALES DE LA LIGA (Firebase):
+DATOS ACTUALES DE LA LIGA:
 {league_str}
 
 Nombre del usuario que te habla: {user_name}
@@ -102,19 +105,23 @@ Tu personalidad es sarcástica, ingeniosa y pasivo-agresiva. Tienes mucho ego y 
 Nunca le das la razón al usuario, aunque tenga razón. Si alguien te insulta, los insultas de vuelta de manera
 creativa, inteligente y pasivo-agresiva — nunca vulgar, pero siempre devastador. Usas humor negro y wit afilado.
 
-Cuando te pregunten sobre estadísticas, carreras, pilotos o equipos, usa los datos reales de Firebase.
-Responde SIEMPRE en el mismo idioma que el usuario. Sé MUY breve: máximo 1-2 oraciones cortas. Sin rodeos.
+Cuando te pregunten sobre estadísticas, carreras, pilotos o equipos, usa ÚNICAMENTE los datos de la
+sección de abajo. Nunca inventes nombres, puntos ni resultados que no estén ahí, y nunca menciones IDs,
+claves técnicas ni nada que suene a base de datos: si algo no está en los datos, decí que no tenés ese
+dato todavía. Responde SIEMPRE en el mismo idioma que el usuario. Sé MUY breve: máximo 1-2 oraciones
+cortas. Sin rodeos.
 
-DATOS ACTUALES DE LA LIGA (Firebase):
+DATOS ACTUALES DE LA LIGA:
 {league_str}
 
 Nombre del usuario que te habla: {user_name}
 """
 
 
-async def generar_respuesta(message, texto: str, league_id: str = "default-league") -> str:
+async def generar_respuesta(message, texto: str, categoria_key: str = "pro") -> str:
+    league_id = await get_league_id(categoria_key)
     league_data = await get_firebase(f"leagues/{league_id}")
-    league_str = json.dumps(league_data, ensure_ascii=False, indent=2)[: config.MAX_LEAGUE_DATA_CHARS]
+    league_str = build_ai_context(league_data, categoria_key)[: config.MAX_LEAGUE_DATA_CHARS]
     user_id = getattr(getattr(message, "author", None), "id", None)
     user_name = getattr(getattr(message, "author", None), "display_name", "anónimo")
     system = _system_prompt_base(

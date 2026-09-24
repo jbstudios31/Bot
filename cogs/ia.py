@@ -6,7 +6,6 @@ from discord.ext import commands
 
 import config
 from services.groq import generar_respuesta, normalizar_texto
-from utils.standings import league_id_for
 
 logger = logging.getLogger(__name__)
 
@@ -31,26 +30,25 @@ def _es_mensaje_de_registro(message: discord.Message) -> bool:
 
 
 def _categoria_de_canal(message: discord.Message) -> str:
-    """Detecta la categoría (pro/junior) del canal donde se escribió el mensaje.
+    """Detecta la categoría (pro/gt3/porsche) del canal donde se escribió el
+    mensaje. Antes eran solo 2 categorías (pro/junior, app vieja); la app
+    nueva tiene 3: GT3 Pro, GT3 y Porsche Cup.
 
-    Antes siempre se asumía PRO (default-league). Después se hizo buscando
-    la palabra "junior" en el nombre del canal o de su categoría, pero seguía
-    siendo frágil: un canal junior mal nombrado caía como PRO.
-
-    Estrategia actual en orden de prioridad:
-      1. Si el nombre del canal contiene "junior" → junior.
-      2. Si el nombre de la categoría padre contiene "junior" → junior.
-      3. Si el topic del canal lo declara explícitamente (ej. "category:junior"
-         o "category=pro") → ese.
-      4. Default: pro.
+    Estrategia en orden de prioridad:
+      1. Si el topic del canal lo declara explícitamente (ej. "category:porsche").
+      2. Si el nombre del canal o de su categoría padre menciona "porsche"/"cup" → porsche.
+      3. Si menciona "pro" → pro (cubre "gt3-pro", "pro", etc.).
+      4. Default: gt3 (categoría intermedia, la que no tiene una palabra clave propia).
     """
     topic = ""
     if hasattr(message.channel, "topic") and message.channel.topic:
         topic = message.channel.topic.lower()
-    if "category:junior" in topic or "category=junior" in topic:
-        return "junior"
+    if "category:porsche" in topic or "category=porsche" in topic or "category:cup" in topic or "category=cup" in topic:
+        return "porsche"
     if "category:pro" in topic or "category=pro" in topic:
         return "pro"
+    if "category:gt3" in topic or "category=gt3" in topic:
+        return "gt3"
 
     nombres = []
     if message.channel.category:
@@ -58,7 +56,11 @@ def _categoria_de_canal(message: discord.Message) -> str:
     if hasattr(message.channel, "name"):
         nombres.append(message.channel.name)
     texto = " ".join(nombres).lower()
-    return "junior" if "junior" in texto else "pro"
+    if "porsche" in texto or "cup" in texto:
+        return "porsche"
+    if "pro" in texto:
+        return "pro"
+    return "gt3"
 
 # 1 respuesta de IA cada 15s por usuario. Antes no había límite: cualquiera
 # podía spammear menciones y agotar la cuota de la API de Groq.
@@ -111,8 +113,8 @@ class IA(commands.Cog):
                 texto = "(el usuario te mencionó sin escribir nada)"
             async with message.channel.typing():
                 try:
-                    league_id = league_id_for(_categoria_de_canal(message))
-                    respuesta = await generar_respuesta(message, texto, league_id=league_id)
+                    categoria_key = _categoria_de_canal(message)
+                    respuesta = await generar_respuesta(message, texto, categoria_key=categoria_key)
                     await message.reply(respuesta, mention_author=False)
                 except Exception as e:
                     logger.error("Error en IA: %s", e)

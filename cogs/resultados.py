@@ -8,7 +8,10 @@ import discord
 from discord.ext import commands
 
 from services.firebase import get_firebase, set_firebase, patch_firebase
-from utils.standings import get_league, find_driver, find_race, compute_standings, make_standings_embed, league_id_for, cat_label_for
+from utils.standings import (
+    get_league, find_driver, find_race, compute_standings, make_standings_embed,
+    get_league_id, resolve_categoria, cat_label_for, categorias_disponibles_str,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +21,11 @@ class Resultados(commands.Cog):
         self.bot = bot
 
     async def _cargar_resultado(self, ctx, categoria: str, nombre_carrera: str, posiciones: str, fecha: str = None):
-        league_id = league_id_for(categoria)
-        cat_label = cat_label_for(categoria)
+        cat_key = resolve_categoria(categoria)
+        if not cat_key:
+            await ctx.send(f"❌ Categoría inválida. Usa una de: {categorias_disponibles_str()}")
+            return
+        cat_label = cat_label_for(cat_key)
 
         # Si el admin pasó fecha, validamos el formato. Si no, usamos hoy UTC.
         # Antes la fecha de la carrera nueva siempre era "hoy UTC", lo que era
@@ -30,6 +36,7 @@ class Resultados(commands.Cog):
             await ctx.send("❌ Fecha inválida. Usa formato `YYYY-MM-DD`, ej: `2026-03-15`.")
             return
 
+        league_id = await get_league_id(cat_key)
         league = await get_league(league_id)
         if not league:
             await ctx.send("❌ No se pudieron obtener datos de Firebase.")
@@ -102,10 +109,6 @@ class Resultados(commands.Cog):
             # Ahora: se agrega como hijo nuevo con PUT a su propia key, sin
             # tocar el resto del calendario.
             race_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
-            # Antes la fecha de la carrera nueva siempre era "hoy UTC", lo que
-            # era incorrecto si el admin cargaba la carrera de un día distinto
-            # (ej. cargando el lunes una del domingo). Ahora se puede pasar
-            # fecha opcional en formato YYYY-MM-DD, o se usa hoy como antes.
             race = {
                 "id": race_id,
                 "name": nombre_carrera,
@@ -159,12 +162,12 @@ class Resultados(commands.Cog):
                 vr = " ⚡" if e.get("fastestLap") else ""
                 lines.append(f"{medal} **{name}**{vr}")
         embed.description = "\n".join(lines)
-        embed.set_footer(text=f"Cargado por {ctx.author.display_name} • GT3 Cup World Series")
+        embed.set_footer(text=f"Cargado por {ctx.author.display_name} • GT3 Platinum Cup")
         await ctx.send(embed=embed)
 
         league_updated = await get_league(league_id)
         standings = compute_standings(league_updated)
-        embed2 = make_standings_embed(standings, league.get("leagueName", "GT3 Cup"), league_id)
+        embed2 = make_standings_embed(standings, league.get("leagueName", "GT3 Platinum Cup"), cat_key)
         embed2.title = f"📊 Clasificación actualizada — {cat_label}"
         await ctx.send(embed=embed2)
 
@@ -172,11 +175,11 @@ class Resultados(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def resultado(self, ctx, nombre_carrera: str, *, resto: str):
         """
-        Carga el resultado de una carrera PRO.
+        Carga el resultado de una carrera de GT3 Pro.
         Uso: !resultado "Ronda 1 Monaco" 1:Gonzalez 2:Martinez 3:Lopez dnf:Perez vr:Gonzalez
               !resultado "Ronda 1 Monaco" 2026-03-15 1:Gonzalez ...
         El segundo parámetro (opcional) es la fecha en formato YYYY-MM-DD.
-        Para Junior usa !resultado_junior con la misma sintaxis.
+        Para GT3 usa !resultado_gt3, para Porsche Cup usa !resultado_porsche.
         """
         # La sintaxis original es: nombre_carrera + posiciones
         # La nueva sintaxis es: nombre_carrera + fecha (YYYY-MM-DD) + posiciones
@@ -193,10 +196,10 @@ class Resultados(commands.Cog):
             return
         await self._cargar_resultado(ctx, "pro", nombre_carrera, cuerpo, fecha)
 
-    @commands.command(name="resultado_junior")
+    @commands.command(name="resultado_gt3")
     @commands.has_permissions(manage_roles=True)
-    async def resultado_junior(self, ctx, nombre_carrera: str, *, resto: str):
-        """Igual que !resultado pero para la categoría Junior."""
+    async def resultado_gt3(self, ctx, nombre_carrera: str, *, resto: str):
+        """Igual que !resultado pero para la categoría GT3."""
         partes = resto.split(maxsplit=1)
         fecha = None
         cuerpo = resto
@@ -204,9 +207,24 @@ class Resultados(commands.Cog):
             fecha = partes[0]
             cuerpo = partes[1] if len(partes) > 1 else ""
         if not cuerpo:
-            await ctx.send("❌ Faltan las posiciones. Ejemplo: `!resultado_junior \"Monaco\" 1:Gonzalez 2:Martinez`")
+            await ctx.send("❌ Faltan las posiciones. Ejemplo: `!resultado_gt3 \"Monaco\" 1:Gonzalez 2:Martinez`")
             return
-        await self._cargar_resultado(ctx, "junior", nombre_carrera, cuerpo, fecha)
+        await self._cargar_resultado(ctx, "gt3", nombre_carrera, cuerpo, fecha)
+
+    @commands.command(name="resultado_porsche")
+    @commands.has_permissions(manage_roles=True)
+    async def resultado_porsche(self, ctx, nombre_carrera: str, *, resto: str):
+        """Igual que !resultado pero para la categoría Porsche Cup."""
+        partes = resto.split(maxsplit=1)
+        fecha = None
+        cuerpo = resto
+        if partes and re.fullmatch(r"\d{4}-\d{2}-\d{2}", partes[0]):
+            fecha = partes[0]
+            cuerpo = partes[1] if len(partes) > 1 else ""
+        if not cuerpo:
+            await ctx.send("❌ Faltan las posiciones. Ejemplo: `!resultado_porsche \"Monaco\" 1:Gonzalez 2:Martinez`")
+            return
+        await self._cargar_resultado(ctx, "porsche", nombre_carrera, cuerpo, fecha)
 
 
 async def setup(bot):
