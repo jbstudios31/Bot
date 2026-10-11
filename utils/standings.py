@@ -10,23 +10,23 @@ import discord
 from services.firebase import get_firebase
 
 CATEGORIES = {
-    "pro":     {"db_id": "gt3-pro-league",    "label": "GT3 Pro",     "color": 0xD6293F},
-    "gt3":     {"db_id": "gt3-league",        "label": "GT3",         "color": 0x3D6BFF},
-    "porsche": {"db_id": "porsche-cup-league", "label": "Porsche Cup", "color": 0xE0932E},
+    "pro": {"db_id": "gt3-pro-league", "label": "GT3 Pro", "color": 0xD6293F},
+    "gt3": {"db_id": "gt3-league",     "label": "GT3",     "color": 0x3D6BFF},
+    "f3":  {"db_id": "f3-league",      "label": "F3",      "color": 0xE0932E},
 }
 
 # Alias que puede escribir un usuario/admin en Discord -> key interna de CATEGORIES.
+# "f3" reemplazó a Porsche Cup en la temporada 2 de la app (GT3 Platinum Cup).
 _ALIASES = {
     "pro": "pro", "gt3pro": "pro", "gt3-pro": "pro", "gt3_pro": "pro",
     "gt3": "gt3", "gt": "gt3",
-    "porsche": "porsche", "porschecup": "porsche", "porsche-cup": "porsche",
-    "porsche_cup": "porsche", "cup": "porsche", "porschecupp": "porsche",
+    "f3": "f3", "f-3": "f3", "f_3": "f3", "f3cup": "f3", "f3-cup": "f3", "f3_cup": "f3",
 }
 
 
 def resolve_categoria(categoria: str):
     """Normaliza texto libre ("Porsche Cup", "gt3-pro", etc.) a una key de
-    CATEGORIES ("pro"/"gt3"/"porsche"), o None si no matchea ninguna."""
+    CATEGORIES ("pro"/"gt3"/"f3"), o None si no matchea ninguna."""
     if not categoria:
         return None
     limpio = categoria.strip().lower().replace(" ", "")

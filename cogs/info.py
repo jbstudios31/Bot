@@ -15,7 +15,7 @@ class Info(commands.Cog):
 
     @commands.command(name="stats")
     async def stats(self, ctx, categoria: str = "pro"):
-        """Muestra un resumen de la liga generado por IA. Uso: !stats [pro|gt3|porsche]"""
+        """Muestra un resumen de la liga generado por IA. Uso: !stats [pro|gt3|f3]"""
         cat_key = resolve_categoria(categoria)
         if not cat_key:
             await ctx.send(f"❌ Categoría inválida. Usa una de: {categorias_disponibles_str()}")
@@ -46,28 +46,28 @@ class Info(commands.Cog):
         )
         embed.add_field(
             name="📊 Clasificación",
-            value="`!clasificacion [pro|gt3|porsche]` — Ver clasificación de pilotos\n`!stats [pro|gt3|porsche]` — Resumen de la liga generado por IA",
+            value="`!clasificacion [pro|gt3|f3]` — Ver clasificación de pilotos\n`!stats [pro|gt3|f3]` — Resumen de la liga generado por IA",
             inline=False
         )
         embed.add_field(
             name="🚦 Penalizaciones (solo admins)",
             value=(
-                '`!penalizar <pro|gt3|porsche> "Piloto" <tipo> "Carrera" <motivo>`\n'
+                '`!penalizar <pro|gt3|f3> "Piloto" <tipo> "Carrera" <motivo>`\n'
                 "Tipos: `+5s` `+10s` `+15s` `+20s` `+30s` `DT` `DQ` `ADVERTENCIA`\n"
                 'Ejemplo: `!penalizar pro "Gonzalez" +5s "Monaco" Corte en la chicane`\n'
-                "`!penalizaciones [pro|gt3|porsche]` — Ver sanciones agrupadas por carrera\n"
+                "`!penalizaciones [pro|gt3|f3]` — Ver sanciones agrupadas por carrera\n"
                 "`!borrar_penalizacion <id>` — Eliminar penalización de GT3 Pro\n"
                 "`!borrar_penalizacion_gt3 <id>` — Eliminar penalización de GT3\n"
-                "`!borrar_penalizacion_porsche <id>` — Eliminar penalización de Porsche Cup"
+                "`!borrar_penalizacion_f3 <id>` — Eliminar penalización de F3"
             ),
             inline=False
         )
         embed.add_field(
             name="🏁 Resultados (solo admins)",
             value=(
-                '`!resultado "Nombre Carrera" 1:Piloto 2:Piloto dnf:Piloto vr:Piloto` — GT3 Pro\n'
-                '`!resultado_gt3 "Nombre Carrera" ...` — GT3\n'
-                '`!resultado_porsche "Nombre Carrera" ...` — Porsche Cup\n'
+        '`!resultado "Nombre Carrera" 1:Piloto 2:Piloto dnf:Piloto vr:Piloto` — GT3 Pro\n'
+        '`!resultado_gt3 "Nombre Carrera" ...` — GT3\n'
+        '`!resultado_f3 "Nombre Carrera" ...` — F3\n'
                 "Carga resultados y actualiza la clasificación automáticamente."
             ),
             inline=False

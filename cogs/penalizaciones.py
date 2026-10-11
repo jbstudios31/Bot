@@ -29,7 +29,7 @@ class Penalizaciones(commands.Cog):
     async def penalizar(self, ctx, categoria: str, piloto_nombre: str, tipo: str, carrera_nombre: str, *, motivo: str = "Sin motivo especificado"):
         """
         Registra una penalización a un piloto.
-        Uso: !penalizar <pro|gt3|porsche> "Nombre" <tipo> "Carrera" <motivo>
+        Uso: !penalizar <pro|gt3|f3> "Nombre" <tipo> "Carrera" <motivo>
         Tipos: +5s +10s +15s +20s +30s DT DQ ADVERTENCIA
         """
         cat_key = resolve_categoria(categoria)
@@ -117,7 +117,7 @@ class Penalizaciones(commands.Cog):
 
     @commands.command(name="penalizaciones")
     async def penalizaciones(self, ctx, categoria: str = "pro"):
-        """Muestra las penalizaciones activas agrupadas por Gran Premio. Uso: !penalizaciones [pro|gt3|porsche]"""
+        """Muestra las penalizaciones activas agrupadas por Gran Premio. Uso: !penalizaciones [pro|gt3|f3]"""
         cat_key = resolve_categoria(categoria)
         if not cat_key:
             await ctx.send(f"❌ Categoría inválida. Usa una de: {categorias_disponibles_str()}")
@@ -185,7 +185,7 @@ class Penalizaciones(commands.Cog):
                         embed.add_field(name=nombre, value=parte, inline=False)
 
             total = sum(len(g["pens"]) for g in sorted_groups)
-            embed.set_footer(text=f"{total} sanción(es) activa(s) • !borrar_penalizacion <id> (o _gt3 / _porsche)")
+            embed.set_footer(text=f"{total} sanción(es) activa(s) • !borrar_penalizacion <id> (o _gt3 / _f3)")
             await ctx.send(embed=embed)
 
     async def _borrar_penalizacion(self, ctx, categoria: str, penalty_id: str):
@@ -226,11 +226,11 @@ class Penalizaciones(commands.Cog):
         """Elimina (desactiva) una penalización de GT3 por su ID."""
         await self._borrar_penalizacion(ctx, "gt3", penalty_id)
 
-    @commands.command(name="borrar_penalizacion_porsche")
+    @commands.command(name="borrar_penalizacion_f3", aliases=["borrar_penalizacion_porsche"])
     @commands.has_permissions(manage_roles=True)
-    async def borrar_penalizacion_porsche(self, ctx, penalty_id: str):
-        """Elimina (desactiva) una penalización de Porsche Cup por su ID."""
-        await self._borrar_penalizacion(ctx, "porsche", penalty_id)
+    async def borrar_penalizacion_f3(self, ctx, penalty_id: str):
+        """Elimina (desactiva) una penalización de F3 por su ID."""
+        await self._borrar_penalizacion(ctx, "f3", penalty_id)
 
 
 async def setup(bot):

@@ -9,7 +9,7 @@ class Clasificacion(commands.Cog):
 
     @commands.command(name="clasificacion")
     async def clasificacion(self, ctx, categoria: str = "pro"):
-        """Muestra la clasificación actual de pilotos. Uso: !clasificacion [pro|gt3|porsche]"""
+        """Muestra la clasificación actual de pilotos. Uso: !clasificacion [pro|gt3|f3]"""
         cat_key = resolve_categoria(categoria)
         if not cat_key:
             await ctx.send(f"❌ Categoría inválida. Usa una de: {categorias_disponibles_str()}")

@@ -30,21 +30,25 @@ def _es_mensaje_de_registro(message: discord.Message) -> bool:
 
 
 def _categoria_de_canal(message: discord.Message) -> str:
-    """Detecta la categoría (pro/gt3/porsche) del canal donde se escribió el
-    mensaje. Antes eran solo 2 categorías (pro/junior, app vieja); la app
-    nueva tiene 3: GT3 Pro, GT3 y Porsche Cup.
+    """Detecta la categoría (pro/gt3/f3) del canal donde se escribió el
+    mensaje. La app tiene 3: GT3 Pro, GT3 y F3 (F3 reemplazó a Porsche Cup
+    en la temporada 2).
 
     Estrategia en orden de prioridad:
-      1. Si el topic del canal lo declara explícitamente (ej. "category:porsche").
-      2. Si el nombre del canal o de su categoría padre menciona "porsche"/"cup" → porsche.
+      1. Si el topic del canal lo declara explícitamente (ej. "category:f3").
+      2. Si el nombre del canal o de su categoría padre menciona "f3" → f3
+         (se chequea ANTES que "pro": "gt3-pro" no contiene "f3", así que
+         no hay colisión, pero "f3" tiene que ganar si un canal se llama
+         "F3 Pro").
       3. Si menciona "pro" → pro (cubre "gt3-pro", "pro", etc.).
-      4. Default: gt3 (categoría intermedia, la que no tiene una palabra clave propia).
+      4. Default: gt3 (categoría intermedia, la que no tiene una palabra
+         clave propia).
     """
     topic = ""
     if hasattr(message.channel, "topic") and message.channel.topic:
         topic = message.channel.topic.lower()
-    if "category:porsche" in topic or "category=porsche" in topic or "category:cup" in topic or "category=cup" in topic:
-        return "porsche"
+    if "category:f3" in topic or "category=f3" in topic:
+        return "f3"
     if "category:pro" in topic or "category=pro" in topic:
         return "pro"
     if "category:gt3" in topic or "category=gt3" in topic:
@@ -56,8 +60,8 @@ def _categoria_de_canal(message: discord.Message) -> str:
     if hasattr(message.channel, "name"):
         nombres.append(message.channel.name)
     texto = " ".join(nombres).lower()
-    if "porsche" in texto or "cup" in texto:
-        return "porsche"
+    if "f3" in texto:
+        return "f3"
     if "pro" in texto:
         return "pro"
     return "gt3"

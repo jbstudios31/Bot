@@ -179,7 +179,7 @@ class Resultados(commands.Cog):
         Uso: !resultado "Ronda 1 Monaco" 1:Gonzalez 2:Martinez 3:Lopez dnf:Perez vr:Gonzalez
               !resultado "Ronda 1 Monaco" 2026-03-15 1:Gonzalez ...
         El segundo parámetro (opcional) es la fecha en formato YYYY-MM-DD.
-        Para GT3 usa !resultado_gt3, para Porsche Cup usa !resultado_porsche.
+        Para GT3 usa !resultado_gt3, para F3 usa !resultado_f3.
         """
         # La sintaxis original es: nombre_carrera + posiciones
         # La nueva sintaxis es: nombre_carrera + fecha (YYYY-MM-DD) + posiciones
@@ -211,10 +211,10 @@ class Resultados(commands.Cog):
             return
         await self._cargar_resultado(ctx, "gt3", nombre_carrera, cuerpo, fecha)
 
-    @commands.command(name="resultado_porsche")
+    @commands.command(name="resultado_f3", aliases=["resultado_porsche"])
     @commands.has_permissions(manage_roles=True)
-    async def resultado_porsche(self, ctx, nombre_carrera: str, *, resto: str):
-        """Igual que !resultado pero para la categoría Porsche Cup."""
+    async def resultado_f3(self, ctx, nombre_carrera: str, *, resto: str):
+        """Igual que !resultado pero para la categoría F3."""
         partes = resto.split(maxsplit=1)
         fecha = None
         cuerpo = resto
@@ -222,9 +222,9 @@ class Resultados(commands.Cog):
             fecha = partes[0]
             cuerpo = partes[1] if len(partes) > 1 else ""
         if not cuerpo:
-            await ctx.send("❌ Faltan las posiciones. Ejemplo: `!resultado_porsche \"Monaco\" 1:Gonzalez 2:Martinez`")
+            await ctx.send("❌ Faltan las posiciones. Ejemplo: `!resultado_f3 \"Monaco\" 1:Gonzalez 2:Martinez`")
             return
-        await self._cargar_resultado(ctx, "porsche", nombre_carrera, cuerpo, fecha)
+        await self._cargar_resultado(ctx, "f3", nombre_carrera, cuerpo, fecha)
 
 
 async def setup(bot):
