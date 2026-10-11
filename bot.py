@@ -37,6 +37,7 @@ COGS = [
     "cogs.admin_mensajes",
     "cogs.info",
     "cogs.musica",
+    "cogs.creador",
 ]
 
 

@@ -83,9 +83,14 @@ async def _get_fb_token():
         return _fb_id_token
 
 
-async def get_firebase(path: str):
+async def get_firebase(path: str, shallow: bool = False):
     url = f"{FIREBASE_URL}/{path}.json"
     params = {"auth": await _get_fb_token()}
+    if shallow:
+        # shallow=true devuelve solo las keys del primer nivel (los objetos
+        # valen true, los escalares su valor). Para diagnóstico sin bajar
+        # toda la base (que puede pesar MBs con results/penalties).
+        params["shallow"] = "true"
     try:
         s = await _get_session()
         async with s.get(url, params=params) as r:
