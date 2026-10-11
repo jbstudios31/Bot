@@ -44,9 +44,18 @@ async def ask_groq(system_prompt: str, user_message: str) -> str:
         "Authorization": f"Bearer {config.GROQ_API_KEY}",
         "Content-Type": "application/json",
     }
+    # openai/gpt-oss-20b es un modelo de razonamiento: los tokens de reasoning
+    # cuentan dentro del presupuesto de completación. Antes se mandaba
+    # max_tokens=1024 (deprecado) sin controlar el reasoning: si el modelo
+    # gastaba todo el presupuesto "pensando", content volvía vacío/None y
+    # todos los comandos de IA explotaban. Ahora: max_completion_tokens con
+    # margen, reasoning_effort bajo (las respuestas son de 1-2 oraciones) y
+    # validación explícita de que venga contenido.
     payload = {
         "model": "openai/gpt-oss-20b",
-        "max_tokens": 1024,
+        "max_completion_tokens": 2048,
+        "reasoning_effort": "low",
+        "include_reasoning": False,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
@@ -59,11 +68,21 @@ async def ask_groq(system_prompt: str, user_message: str) -> str:
         "https://api.groq.com/openai/v1/chat/completions",
         headers=headers,
         json=payload,
+        timeout=_GROQ_TIMEOUT,
     ) as r:
+        if r.status != 200:
+            body = await r.text()
+            raise Exception(f"Groq HTTP {r.status}: {body[:300]}")
         data = await r.json()
         if "error" in data:
-            raise Exception(f"Groq error {r.status}: {data['error']}")
-        return data["choices"][0]["message"]["content"]
+            raise Exception(f"Groq error: {data['error']}")
+        choice = (data.get("choices") or [{}])[0]
+        content = ((choice.get("message") or {}).get("content") or "").strip()
+        if not content:
+            raise Exception(
+                f"Groq no devolvió contenido (finish_reason={choice.get('finish_reason')})"
+            )
+        return content
 
 
 def _normalizar(texto: str) -> str:
